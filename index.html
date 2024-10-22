@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>随机数生成器</title>
+
+    <!-- CSS样式部分 -->
+    <style>
+        /* 设置整个页面的背景图片 */
+        body {
+            background-image: url('B:/bi.jpg'); /* 替换为你的背景图片路径 */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed; /* 背景固定，不随页面滚动 */
+            margin: 0; /* 移除页面默认边距 */
+            font-family: Arial, sans-serif; /* 设置全局字体 */
+        }
+
+        /* 圆形容器的样式 */
+        .circle-container {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding:20px;
+            height: 100vh; 
+            
+        }
+
+        /* 每个圆形的样式 */
+        .circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: rgba(173, 216, 230, 0.8); /* 半透明白色背景 */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);  /* 添加阴影效果 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            animation: numberChange 1s infinite; /* 动态效果 */
+        }
+
+        /* 动态效果的keyframes */
+        @keyframes numberChange {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .front {
+            background-color: rgba(173, 216, 230, 0.5); /* 前面数字带蓝色背景 */
+        }
+
+        .back {
+            background-color: rgba(255,99,71, 0.8); /* 后面数字带橙色背景 */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 数字生成器区域 -->
+	<!-- 图片上传控件 -->
+    <input type="file" id="file-input" accept="image/*" style="margin-bottom: 20px;" />
+
+    <div class="input-section" id="input-section">
+        <!-- 前面的输入部分 -->
+        <div class="input-group">
+            <label>前面数字范围：</label>
+            <input type="number" id="front-min" placeholder="最小值" min="1" value="1">
+            <input type="number" id="front-max" placeholder="最大值" min="1" value="49">
+        </div>
+        <div class="input-group">
+            <label>前面要生成的随机数个数：</label>
+            <input type="number" id="front-count" placeholder="数量" min="1" value="6">
+        </div>
+        <hr>
+        <!-- 后面的输入部分 -->
+        <div class="input-group">
+            <label>后面数字范围：</label>
+            <input type="number" id="back-min" placeholder="最小值" min="1" value="1">
+            <input type="number" id="back-max" placeholder="最大值" min="1" value="49">
+        </div>
+        <div class="input-group">
+            <label>后面要生成的随机数个数：</label>
+            <input type="number" id="back-count" placeholder="数量" min="0" value="0">
+        </div>
+        <button id="start-button">开始生成</button>
+    </div>
+
+    <!-- 圆形生成器部分，默认隐藏 -->
+    <div class="circle-container" id="circles-container" style="display: none;">
+        <!-- 动态生成的圆形会显示在这里 -->
+    </div>
+
+    <script>
+		const fileInput = document.getElementById('file-input');
+
+		fileInput.addEventListener('change', function(event) {
+			const file = event.target.files[0]; // 获取选择的文件
+			if (file) {
+				const reader = new FileReader();
+
+				reader.onload = function(e) {
+					document.body.style.backgroundImage = `url(${e.target.result})`;
+				};
+
+				reader.readAsDataURL(file);
+			}
+		});
+
+        // 获取元素
+        const startButton = document.getElementById('start-button');
+        const inputSection = document.getElementById('input-section');
+        const circlesContainer = document.getElementById('circles-container');
+
+        let intervalId;
+
+        // 生成不重复的随机数
+        function generateUniqueNumbers(min, max, count) {
+            const numbers = [];
+            const available = [];
+            for (let i = min; i <= max; i++) {
+                available.push(i);
+            }
+            for (let i = 0; i < count; i++) {
+                if (available.length === 0) break;
+                const index = Math.floor(Math.random() * available.length);
+                numbers.push(available[index]);
+                available.splice(index, 1);
+            }
+            return numbers;
+        }
+
+        // 创建圆圈元素
+        function createCircles(frontNumbers, backNumbers) {
+            circlesContainer.innerHTML = ''; // 清空之前的圆圈
+
+            frontNumbers.forEach(num => {
+                const circle = document.createElement('div');
+                circle.classList.add('circle', 'front');
+                circle.textContent = num;
+                circlesContainer.appendChild(circle);
+            });
+
+            backNumbers.forEach(num => {
+                const circle = document.createElement('div');
+                circle.classList.add('circle', 'back');
+                circle.textContent = num;
+                circlesContainer.appendChild(circle);
+            });
+        }
+
+        // 开始动画
+        function startAnimation(frontRange, frontCount, backRange, backCount) {
+            if (intervalId) clearInterval(intervalId); // 清除之前的定时器
+
+            intervalId = setInterval(() => {
+                // 生成前面的数字
+                const frontNumbers = generateUniqueNumbers(frontRange.min, frontRange.max, frontCount);
+
+                // 生成后面的数字
+                let backNumbers = [];
+                if (backCount > 0) {
+                    backNumbers = generateUniqueNumbers(backRange.min, backRange.max, backCount);
+                }
+
+                // 创建并显示圆圈
+                createCircles(frontNumbers, backNumbers);
+            }, 1000); // 每秒更新一次
+        }
+
+        // 处理开始按钮点击事件
+        startButton.addEventListener('click', () => {
+            // 获取用户输入
+            const frontMin = parseInt(document.getElementById('front-min').value);
+            const frontMax = parseInt(document.getElementById('front-max').value);
+            const frontCount = parseInt(document.getElementById('front-count').value);
+
+            const backMin = parseInt(document.getElementById('back-min').value);
+            const backMax = parseInt(document.getElementById('back-max').value);
+            const backCount = parseInt(document.getElementById('back-count').value);
+
+            // 验证输入
+            if (frontMin > frontMax) {
+                alert('前面数字的最小值不能大于最大值。');
+                return;
+            }
+            if (backMin > backMax) {
+                alert('后面数字的最小值不能大于最大值。');
+                return;
+            }
+            if (frontCount > (frontMax - frontMin + 1)) {
+                alert('前面生成的随机数个数超过范围内的可选数。');
+                return;
+            }
+            if (backCount > (backMax - backMin + 1)) {
+                alert('后面生成的随机数个数超过范围内的可选数。');
+                return;
+            }
+
+            // 隐藏输入部分，显示圆形生成器部分
+            inputSection.style.display = 'none';
+            circlesContainer.style.display = 'flex';
+
+            // 设置范围和数量
+            const frontRange = { min: frontMin, max: frontMax };
+            const backRange = { min: backMin, max: backMax };
+
+            // 开始动画
+            startAnimation(frontRange, frontCount, backRange, backCount);
+        });    
+		        
+    </script>
+
+</body>
+</html>
